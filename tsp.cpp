@@ -87,7 +87,7 @@ int main() {
             std::cout << " -> 0" << std::endl;
 
         } else {
-            std::cout << "No feasible solution found." << std::endl;
+            std::cout << "No Solution Found." << std::endl;
         }
 
         std::cout << "------------------------------------------------" << std::endl;
