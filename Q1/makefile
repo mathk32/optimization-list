@@ -8,7 +8,7 @@ all: $(TARGET)
 $(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET)
 
-# injeta o arquivo instancia.txt automaticamente
+# inject the instance.txt file automatically
 run: $(TARGET)
 	./$(TARGET) 2 < instance.txt
 
