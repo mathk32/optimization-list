@@ -1,18 +1,17 @@
-# Otimização Combinatória - Lista de Exercícios
+# Combinatorial Optimization - Exercise List
 
-Este repositório contém as soluções desenvolvidas para uma lista de exercícios de Otimização. Os problemas foram resolvidos utilizando uma meta-heurística própria e modelos exatos implementados com o solver IBM ILOG CPLEX.
+This repository contains solutions developed for a Combinatorial Optimization exercise list. The problems were solved using both a custom metaheuristic and exact optimization models implemented with IBM ILOG CPLEX.
 
-## 📁 Estrutura do Repositório
+## 📁 Repository Structure
 
 ```text
-optimization_list/
-├── optimization_list.pdf    # Lista dos exercícios 
-├── Q1/                      # Questão 1: Meta-heurística para Bin Packing
-│   ├── bin_packing.cpp      # Código principal
+├── optimization_list.pdf
+├── Q1/                      # Question 1: Bin Packing Metaheuristic
+│   ├── bin_packing.cpp      # Main source code
 │   ├── Makefile
-│   └── instance.txt         # Arquivo de entrada
+│   └── instance.txt         # Input file
 │
-└── Q2/                      # Questão 2: Modelos Exatos com CPLEX
+└── Q2/                      # Question 2: Exact Models with CPLEX
     ├── cans.cpp
     ├── click.cpp
     ├── coverage.cpp
@@ -34,139 +33,139 @@ optimization_list/
 
 ---
 
-## 📦 Questão 1 - Problema do Bin Packing (Meta-heurística)
+## 📦 Question 1 - Bin Packing Problem (Metaheuristic)
 
-A solução para o problema de Bin Packing foi implementada em C++ utilizando a meta-heurística **ILS (Iterated Local Search)** combinada com uma busca local baseada no critério *First Improvement*.
+The Bin Packing problem was implemented in C++ using the **ILS (Iterated Local Search)** metaheuristic combined with a *First Improvement* local search strategy.
 
-### Requisitos Atendidos
+### Requirements Addressed
 
-* **(a) Representação da Solução:** Estrutura baseada em `std::vector`, permitindo acesso rápido aos elementos.
-* **(b) Função de Avaliação:** Maximização de $f(x) = \sum L_i^2$, favorecendo caixas mais preenchidas.
-* **(c) Busca Local:** Movimentos aleatórios de *Relocate* e *Swap*, aceitando a primeira solução melhor encontrada.
-* **(d) Critério de Parada:** Controle de tempo utilizando a biblioteca `<chrono>` e um limite definido pelo usuário.
+* **(a) Solution Representation:** Structure based on `std::vector`, allowing fast access to elements.
+* **(b) Evaluation Function:** Maximization of $f(x) = \sum L_i^2$, encouraging bins to be more filled.
+* **(c) Local Search:** Random *Relocate* and *Swap* moves, accepting the first improving solution found.
+* **(d) Stopping Criterion:** Time-based control using the `<chrono>` library and a user-defined time limit.
 
-### Como Compilar e Executar a Q1
+### Compiling and Running Q1
 
-Entre na pasta `Q1`:
+Navigate to the `Q1` directory:
 
 ```bash
 cd Q1
 ```
 
-**Compilar:**
+**Compile:**
 
 ```bash
 make
 ```
 
-**Executar utilizando o arquivo padrão:**
+**Run using the default input file:**
 
-O script está configurado para ler os dados automaticamente a partir do arquivo `instance.txt`, utilizando um limite de 2 segundos.
+The script is configured to automatically read data from `instance.txt` using a time limit of 2 seconds.
 
 ```bash
 make run
 ```
 
-**Executar manualmente:**
+**Run manually:**
 
-Caso queira alterar o tempo limite ou utilizar outro arquivo de entrada:
+To change the time limit or use a different input file:
 
 ```bash
-./bin_packing <tempo_em_segundos> < <nome_do_arquivo>.txt
+./bin_packing <time_limit_in_seconds> < <input_file>.txt
 ```
 
-### Formato do Arquivo de Entrada (`.txt`)
+### Input File Format (`.txt`)
 
-O arquivo `instance.txt` deve conter:
+The `instance.txt` file must contain:
 
-1. O número total de itens na primeira linha.
-2. O tamanho de cada item (entre 0.0 e 1.0) nas linhas seguintes.
+1. The total number of items on the first line.
+2. The size of each item (between 0.0 and 1.0) on the following lines.
 
 ---
 
-## 🧮 Questão 2 - Modelos Exatos com CPLEX
+## 🧮 Question 2 - Exact Models with CPLEX
 
-Esta pasta reúne diferentes problemas de otimização modelados em C++ e resolvidos com o IBM ILOG CPLEX.
+This directory contains several optimization problems modeled in C++ and solved using IBM ILOG CPLEX.
 
-Os modelos implementados são:
+Implemented models include:
 
-* Problema de Transporte (`transport.cpp`)
-* Caixeiro Viajante (`tsp.cpp`)
-* Roteamento de Veículos Capacitado (`cvrp.cpp`)
-* Caminho Mínimo (`shortest.cpp`)
-* Fluxo Máximo (`maxflow.cpp`)
-* Mochila (`knapsack.cpp`)
-* Cobertura (`coverage.cpp`)
-* Localização de Instalações (`facility.cpp`)
-* Dieta (`diet.cpp`)
-* Escalonamento de Enfermeiros (`nurses.cpp`)
-* Frequência (`frequency.cpp`)
-* Fazenda (`farm.cpp`)
-* Racionamento (`ration.cpp`)
-* Pintura (`paint.cpp`)
-* Latas (`cans.cpp`)
-* Cliques (`click.cpp`)
+* Transportation Problem (`transport.cpp`)
+* Traveling Salesman Problem (TSP) (`tsp.cpp`)
+* Capacitated Vehicle Routing Problem (CVRP) (`cvrp.cpp`)
+* Shortest Path Problem (`shortest.cpp`)
+* Maximum Flow Problem (`maxflow.cpp`)
+* Knapsack Problem (`knapsack.cpp`)
+* Coverage Problem (`coverage.cpp`)
+* Facility Location Problem (`facility.cpp`)
+* Diet Problem (`diet.cpp`)
+* Nurse Scheduling Problem (`nurses.cpp`)
+* Frequency Assignment Problem (`frequency.cpp`)
+* Farm Planning Problem (`farm.cpp`)
+* Ration Problem (`ration.cpp`)
+* Paint Problem (`paint.cpp`)
+* Cans Problem (`cans.cpp`)
+* Clique Problem (`click.cpp`)
 
-### Como Compilar e Executar a Q2
+### Compiling and Running Q2
 
-Entre na pasta `Q2`:
+Navigate to the `Q2` directory:
 
 ```bash
 cd Q2
 ```
 
-Para compilar um modelo específico:
+To compile a specific model:
 
 ```bash
-make <nome_arquivo>
+make <file_name>
 ```
 
-Depois execute:
+Then run the generated executable:
 
 ```bash
-./<nome_arquivo>
+./<file_name>
 ```
 
-### Exemplos
+### Examples
 
-**Caixeiro Viajante (TSP)**
+**Traveling Salesman Problem (TSP)**
 
 ```bash
 make tsp
 ./tsp
 ```
 
-**Roteamento de Veículos (CVRP)**
+**Capacitated Vehicle Routing Problem (CVRP)**
 
 ```bash
 make cvrp
 ./cvrp
 ```
 
-**Problema de Transporte**
+**Transportation Problem**
 
 ```bash
 make transport
 ./transport
 ```
 
-**Caminho Mínimo**
+**Shortest Path Problem**
 
 ```bash
 make shortest
 ./shortest
 ```
 
-**Fluxo Máximo**
+**Maximum Flow Problem**
 
 ```bash
 make maxflow
 ./maxflow
 ```
 
-### Limpeza dos Arquivos Compilados
+### Cleaning Generated Files
 
-Para remover os executáveis gerados e manter a pasta organizada:
+To remove compiled executables and keep the directory organized:
 
 ```bash
 make clean
