@@ -1,0 +1,259 @@
+#include <iostream>
+#include <vector>
+#include <numeric>
+#include <chrono>
+#include <cstdlib>
+#include <ctime>
+#include <algorithm>
+
+// ==============================================================================
+// (a) Representação da Solução
+// ------------------------------------------------------------------------------
+// Faz uso de uma estrutura de dados de via dupla (híbrida) para garantir que
+// a checagem de viabilidade e o cálculo de fitness ocorram em tempo O(1).
+// ==============================================================================
+std::vector<double> item_sizes;         
+std::vector<std::vector<int>> bins;     
+std::vector<double> bin_loads;          
+std::vector<int> item_location;         
+
+// ==============================================================================
+// (b) Função de Avaliação (Fitness)
+// ------------------------------------------------------------------------------
+// Em vez de minimizar o número de caixas (k), o fitness maximiza a soma dos quadrados das cargas dos recipientes.
+// Isso força o algoritmo a encher caixas até o limite de 1.0 e esvaziar outras.
+// ==============================================================================
+double calculate_fitness() {
+    double fitness = 0.0;
+    for (double load : bin_loads) {
+        if (load > 0) fitness += load * load;
+    }
+    return fitness;
+}
+
+// Transfere um item de uma caixa de origem para uma caixa de destino
+void apply_relocate(int item, int src_bin, int target_bin) {
+    bin_loads[src_bin] -= item_sizes[item];
+    bin_loads[target_bin] += item_sizes[item];
+    item_location[item] = target_bin;
+    
+    // Atualiza fisicamente o vetor de itens dentro das caixas
+    bins[src_bin].erase(std::remove(bins[src_bin].begin(), bins[src_bin].end(), item), bins[src_bin].end());
+    bins[target_bin].push_back(item);
+}
+
+// Troca simultaneamente a posição de dois itens entre duas caixas
+void apply_swap(int item1, int item2, int bin1, int bin2) {
+    bin_loads[bin1] += item_sizes[item2] - item_sizes[item1];
+    bin_loads[bin2] += item_sizes[item1] - item_sizes[item2];
+    item_location[item1] = bin2;
+    item_location[item2] = bin1;
+    
+    // Substitui fisicamente os IDs nos vetores das caixas
+    std::replace(bins[bin1].begin(), bins[bin1].end(), item1, item2);
+    std::replace(bins[bin2].begin(), bins[bin2].end(), item2, item1);
+}
+
+// ==============================================================================
+// Heurística Inicial
+// ------------------------------------------------------------------------------
+// Gera a solução base usando a estratégia "First Fit" para que a Busca Local
+// tenha um ponto de partida válido.
+// ==============================================================================
+void generate_initial_solution() {
+    
+    for (size_t i = 0; i < item_sizes.size(); i++) {
+        bool placed = false;
+        for (size_t b = 0; b < bins.size(); b++) {
+            // Se o item cabe na caixa, aloca e atualiza as 3 estruturas
+            if (bin_loads[b] + item_sizes[i] <= 1.0) {
+                bins[b].push_back(i);
+                bin_loads[b] += item_sizes[i];
+                item_location[i] = b;
+                placed = true;
+                break;
+            }
+        }
+        // Se não coube em nenhuma caixa existente, abre uma nova
+        if (!placed) {
+            bins.push_back({static_cast<int>(i)});
+            bin_loads.push_back(item_sizes[i]);
+            item_location[i] = bins.size() - 1;
+        }
+    }
+}
+
+// ==============================================================================
+// (c) Estratégia de Busca Local (Vizinhança e First Improvement)
+// ------------------------------------------------------------------------------
+// Explora a vizinhança gerada pelos movimentos de Relocate (Shift) e Swap.
+// Como adotamos o First Improvement, a função retorna 'true' e interrompe
+// a varredura assim que encontra o PRIMEIRO movimento que melhora o fitness.
+// ==============================================================================
+bool local_search_first_improvement() {
+    int num_items = item_sizes.size();
+
+    for (int i = 0; i < num_items; i++) {
+        int src_bin = item_location[i];
+        
+        for (int b = 0; b < (int)bins.size(); b++) { 
+            if (b == src_bin) continue;
+            
+            // Restrição do Bin Packing: A capacidade não pode exceder 1.0
+            if (bin_loads[b] + item_sizes[i] <= 1.0) {
+                double old_src_load = bin_loads[src_bin];
+                double old_tgt_load = bin_loads[b];
+                double new_src_load = old_src_load - item_sizes[i];
+                double new_tgt_load = old_tgt_load + item_sizes[i];
+
+                // Avalia se o movimento gerou aumento real na soma dos quadrados
+                double diff = (new_src_load * new_src_load + new_tgt_load * new_tgt_load) - 
+                              (old_src_load * old_src_load + old_tgt_load * old_tgt_load);
+
+                // Critério First Improvement: Aceita a primeira melhora estrita
+                if (diff > 0.00001) {
+                    apply_relocate(i, src_bin, b);
+                    return true;
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < num_items; i++) {
+        int bin1 = item_location[i];
+        
+        for (int j = i + 1; j < num_items; j++) {
+            int bin2 = item_location[j];
+            if (bin1 == bin2) continue;
+
+            double new_load1 = bin_loads[bin1] - item_sizes[i] + item_sizes[j];
+            double new_load2 = bin_loads[bin2] - item_sizes[j] + item_sizes[i];
+
+            // Restrição dupla: Nenhuma das caixas pode estourar a capacidade
+            if (new_load1 <= 1.0 && new_load2 <= 1.0) {
+                double old_load1 = bin_loads[bin1];
+                double old_load2 = bin_loads[bin2];
+
+                double diff = (new_load1 * new_load1 + new_load2 * new_load2) - 
+                              (old_load1 * old_load1 + old_load2 * old_load2);
+
+                if (diff > 0.00001) {
+                    apply_swap(i, j, bin1, bin2);
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false; // Retorna falso indicando que a solução atual é um Ótimo Local
+}
+
+void apply_perturbation() {
+    int num_items = item_sizes.size();
+    if (num_items < 2) return;
+
+    int item1 = std::rand() % num_items;
+    int item2 = std::rand() % num_items;
+    
+    // Validação: garante que os itens são diferentes e cabem juntos na nova caixa
+    if (item1 != item2 && (item_sizes[item1] + item_sizes[item2] <= 1.0)) {
+        bins.push_back({});
+        bin_loads.push_back(0.0);
+        int new_bin = bins.size() - 1;
+
+        apply_relocate(item1, item_location[item1], new_bin);
+        apply_relocate(item2, item_location[item2], new_bin);
+    }
+}
+
+int main(int argc, char* argv[]) {
+    // ==============================================================================
+    // (d) Critério de Parada: Leitura do Limite de Tempo
+    // ------------------------------------------------------------------------------
+    // O tempo limite (em segundos) é passado no argumento argv[1]
+    // ==============================================================================
+    if (argc < 2) {
+        std::cerr << "Uso: ./bin_packing <timeout_in_seconds> < instance.txt" << std::endl;
+        return 1;
+    }
+    
+    double time_limit = std::atof(argv[1]);
+    std::srand(std::time(nullptr));
+
+    int num_items;
+    if (!(std::cin >> num_items)) {
+        std::cerr << "Error: Could not read the number of items." << std::endl;
+        return 1;
+    }
+
+    // Carrega os tamanhos dos itens baseados no arquivo de instância fornecido
+    for (int i = 0; i < num_items; i++) {
+        double size;
+        std::cin >> size;
+        item_sizes.push_back(size);
+        item_location.push_back(-1);
+    }
+
+    generate_initial_solution();
+
+    std::cout << "Initial Boxes (First Fit): " << bins.size() << std::endl;
+    
+    double global_best_fitness = calculate_fitness();
+    int global_best_k = bins.size();
+    
+    std::vector<std::vector<int>> best_bins_state = bins;
+    std::vector<double> best_bin_loads_state = bin_loads;
+    std::vector<int> best_item_location_state = item_location;
+
+    // Inicia a marcação do relógio para a Letra (d)
+    auto start_time = std::chrono::steady_clock::now();
+
+    int ls_calls = 0;
+    
+    while (true) {
+        // (d) Critério de Parada: Verificação do Tempo da CPU a cada iteração
+        auto current_time = std::chrono::steady_clock::now();
+        std::chrono::duration<double> elapsed_seconds = current_time - start_time;
+        if (elapsed_seconds.count() >= time_limit) break; 
+
+        // Executa até atingir um Ótimo Local (improving == false)
+        bool improving = true;
+        while (improving) {
+            improving = local_search_first_improvement();
+            ls_calls++;
+        }
+
+        // Avaliação do Ótimo Local e Gerenciamento de Estado
+        double current_fitness = calculate_fitness();
+        if (current_fitness > global_best_fitness) {
+            // Nova solução encontrada. Atualiza a melhor marca global.
+            global_best_fitness = current_fitness;
+            
+            int current_k = 0;
+            for (double load : bin_loads) {
+                if (load > 0.0001) current_k++; 
+            }
+            global_best_k = current_k;
+            
+            // Commit do estado atual
+            best_bins_state = bins;
+            best_bin_loads_state = bin_loads;
+            best_item_location_state = item_location;
+        } else {
+            // Rollback: Se a busca local piorou, reverte a estrutura tripla para
+            // a última melhor versão conhecida antes de gerar a nova perturbação
+            bins = best_bins_state;
+            bin_loads = best_bin_loads_state;
+            item_location = best_item_location_state;
+        }
+
+        apply_perturbation();
+    }
+
+    std::cout << "--- ILS Result (Timeout: " << time_limit << "s) ---" << std::endl;
+    std::cout << "Calls for First Improvement: " << ls_calls << std::endl;
+    std::cout << "Best Fitness (Sum of Squares): " << global_best_fitness << std::endl;
+    std::cout << "Final Boxes Used (k): " << global_best_k << std::endl;
+
+    return 0;
+}
